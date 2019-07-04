@@ -49,21 +49,16 @@ def get_page_items(url):
 
     return items, next_url
 
-def get_details(url):
+def get_details(html, url, start_index):
     
     stamp = {}
 
     try:
-       html = get_html(url)
-    except:
-       return stamp
-   
-    try:
-       tr0 = html.select('#Table1 tr')[0]
-       tr2 = html.select('#Table1 tr')[2]
-       tr1 = html.select('#Table1 tr')[1]
-       tr4 = html.select('#Table1 tr')[4]
-       tr5 = html.select('#Table1 tr')[5]
+       tr0 = html.select('#Table1 tr')[start_index]
+       tr2 = html.select('#Table1 tr')[start_index + 2]
+       tr1 = html.select('#Table1 tr')[start_index + 1]
+       tr4 = html.select('#Table1 tr')[start_index + 4]
+       tr5 = html.select('#Table1 tr')[start_index + 5]
     except:
        pass 
 
@@ -100,11 +95,11 @@ def get_details(url):
         stamp['condition'] = None
 
     try:
-        scot_num = get_td_value(tr1, 1)
-        scot_num = scot_num.replace('Scott No.', '').strip()
-        stamp['scot_num'] = scot_num
+        scott_num = get_td_value(tr1, 1)
+        scott_num = scott_num.replace('Scott No.', '').strip()
+        stamp['scott_num'] = scott_num
     except:
-        stamp['scot_num'] = None
+        stamp['scott_num'] = None
 
     try:
         raw_text = get_td_value(tr4, 0)
@@ -120,8 +115,9 @@ def get_details(url):
         image_items = tr0.select('a')
         for image_item in image_items:
             img = image_item.get('href')
-            img = img.replace('./', 'https://www.bridgerkay.com/')
-            images.append(img)
+            if not 'nopicture.png' in img:
+                img = img.replace('./', 'https://www.bridgerkay.com/')
+                images.append(img)
     except:
         pass
 
@@ -148,6 +144,15 @@ page_url = 'https://www.bridgerkay.com/Basic_Gallery.php?cs=156218818750&cr=0'
 while(page_url):
     page_items, page_url = get_page_items(page_url)
     for page_item in page_items:
-        # get current item details 
-        get_details(page_item)
+        # get all items on current details page
+        try:
+            html = get_html(page_item)
+            total_rows = len(html.select('#Table1 tr'))
+            total_items = total_rows // 7 
+            for start_index in range(total_items):
+                # get details for current item
+                get_details(html, page_item, start_index * 7)
+        except:
+            continue
+            
          
